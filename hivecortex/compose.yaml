@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  thehive:
+    container_name: thehive
+    image: strangebee/thehive:5.1
+    depends_on:
+      - cassandra
+      - cortex
+    mem_limit: 1500m
+    ports:
+      - "9000:9000"
+    environment:
+      - JVM_OPTS="-Xms1024M -Xmx1024M"
+    volumes:
+      - ./thehive_files/:/opt/thp/thehive/files/
+      - ./thehive/application.conf:/etc/thehive/application.conf
+      - ./thehive/application.conf.d/:/etc/thehive/application.conf.d/
+    command: 
+      - --secret
+      - "mySecretForTheHive"
+      - "--cql-hostnames"
+      - "cassandra"
+      - "--cortex-hostnames"
+      - "cortex"
+      - "--cortex-keys"
+      - "SdTauV3NZXK2i/LUsxYKZvEiGqtHjGTL"
+
+  cassandra:
+    container_name: cassandra
+    image: 'cassandra'
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=thehive
+    volumes:
+      - cassandradata:/var/lib/cassandra
+
+  cortex:
+    container_name: cortex
+    image: thehiveproject/cortex:3.1.7
+    environment:
+      - job_directory=/tmp/cortex-jobs
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./cortex/application.conf:/etc/cortex/application.conf
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/cortex-jobs:/tmp/cortex-jobs
+volumes:
+  cassandradata:
